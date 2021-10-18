@@ -8,41 +8,39 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @EnableWebSecurity
 public class BasicSecurityConfig extends WebSecurityConfigurerAdapter {
+
+	@Autowired
+	private UserDetailsService userDetailService; 
 	
-	private @Autowired UserDetailsServiceImplements service;
-	
-	@Bean
-	public PasswordEncoder senhaEncoder() {
-		return new BCryptPasswordEncoder();
+	@Override 
+	protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+		auth.userDetailsService(userDetailService);
 		
+		auth.inMemoryAuthentication()
+		.withUser("root").password(passwordEnconder().encode("root")).authorities("ROLE_ADMIN");
 	}
 	
+	@Bean
+	public PasswordEncoder passwordEnconder () {
+		return new BCryptPasswordEncoder();
+		}
+	
 	@Override
- 	protected void configure(HttpSecurity http) throws Exception {
-		http
-		.authorizeRequests()
-			.antMatchers(HttpMethod.POST, "/api/v1/usuario/salvar").permitAll()
-			.antMatchers(HttpMethod.PUT, "/api/v1/usuario/credenciais").permitAll()
+	protected void configure(HttpSecurity http) throws Exception {
+		http.authorizeRequests()
+		.antMatchers("/usuario/logar").permitAll()
+		.antMatchers("/usuario/cadastrar").permitAll()
 		.anyRequest().authenticated()
 		.and().httpBasic()
 		.and().sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
 		.and().cors()
 		.and().csrf().disable();
- 		
- 	}
-	
-	@Override
- 	protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-		auth.userDetailsService(service);
-		
-		auth.inMemoryAuthentication()
-			.withUser("usuario").password(senhaEncoder().encode("senha")).authorities("ROLE_ADMIN");
- 	}
 
+	}
 }
-
